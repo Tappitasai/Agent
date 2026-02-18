@@ -1,28 +1,53 @@
-# Risk Manager
+def assess_risk(target_environment, threats):
+    """Assess the risk level based on environment and threats."""
+    risk_levels = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
 
-class RiskManager:
-    def __init__(self):
-        self.risks = []
+    classification = classify_environment(target_environment)
+    risk_score = 0
 
-    def assess_risk(self, situation):
-        # Implement risk assessment logic based on the situation
-        risk_level = "Low"
-        # Logic to determine risk level
-        self.risks.append((situation, risk_level))
-        return risk_level
+    for threat in threats:
+        risk_score += risk_levels.get(threat.upper(), 0)
 
-    def make_decision(self, risk_level):
-        # Determine decision based on risk level
-        if risk_level == "High":
-            return "Take caution."
-        elif risk_level == "Medium":
-            return "Proceed with monitoring."
-        else:
-            return "Proceed normally."
+    final_risk = "LOW"
+    if risk_score >= 7:
+        final_risk = "CRITICAL"
+    elif risk_score >= 5:
+        final_risk = "HIGH"
+    elif risk_score >= 3:
+        final_risk = "MEDIUM"
 
-# Example Usage
-if __name__ == "__main__":
-    manager = RiskManager()
-    risk = manager.assess_risk("Flood forecasted")
-    decision = manager.make_decision(risk)
-    print(decision)
+    return final_risk, classification
+
+
+def classify_environment(environment):
+    """Classify the target environment to understand context."""
+    classifications = {
+        "production": "Production Environment",
+        "development": "Development Environment",
+        "testing": "Testing Environment"
+    }
+
+    return classifications.get(environment.lower(), "Unknown Environment")
+
+
+def automatic_decision_making(risk_level):
+    """Make decisions based on risk levels."""
+    actions = {
+        "LOW": "Monitor the environment.",
+        "MEDIUM": "Implement additional controls.",
+        "HIGH": "Initiate incident response plan.",
+        "CRITICAL": "Engage full incident response team immediately.",
+    }
+
+    return actions.get(risk_level, "No action required.")
+
+
+# Example usage
+if __name__ == '__main__':
+    environment = "production"
+    current_threats = ["HIGH", "MEDIUM"]
+
+    risk_level, env_class = assess_risk(environment, current_threats)
+    action = automatic_decision_making(risk_level)
+    print(f"Risk Level: {risk_level}, Environment: {env_class}")
+    print(f"Recommended Action: {action}")
