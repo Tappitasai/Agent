@@ -87,17 +87,21 @@ def log(level, msg):
     icon = icons.get(level, "[?]")
     print(f"  {icon} {C.WHITE}{timestamp}{C.END} {msg}")
 
-def ask_approval(step_num, description, command, risk_level="LOW"):
+def ask_approval(step_num, description, command, risk_level="LOW", autonomous=False):
     """Show the user a planned step and ask for approval before running it."""
     risk_colors = {"LOW": C.GREEN, "MEDIUM": C.YELLOW, "HIGH": C.RED}
     risk_color = risk_colors.get(risk_level, C.WHITE)
-    
+
     print(f"\n  {C.CYAN}{'─'*60}{C.END}")
     print(f"  {C.BOLD}Step {step_num}: {description}{C.END}")
     print(f"  {C.YELLOW}Command:{C.END} {C.WHITE}{command}{C.END}")
     print(f"  {C.YELLOW}Risk:{C.END}    {risk_color}{risk_level}{C.END}")
     print(f"  {C.CYAN}{'─'*60}{C.END}")
-    
+
+    if autonomous:
+        log("INFO", f"[AUTO] Executing: {description}")
+        return "run", command
+
     while True:
         choice = input(f"\n  {C.BOLD}[y] Run  [s] Skip  [m] Modify  [q] Quit  → {C.END}").strip().lower()
         if choice == 'y':
@@ -116,14 +120,16 @@ def ask_approval(step_num, description, command, risk_level="LOW"):
 #  CYBERMIND AGENT CLASS — The main brain that ties everything together
 # ═══════════════════════════════════════════════════════════════════════════════
 class CyberMindAgent:
-    def __init__(self):
+    def __init__(self, autonomous=False):
         self.session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.session_log = []
         self.findings = []
         self.errors = []
-        
+        self.autonomous = autonomous
+        self.shells = []
+
         log("INFO", "Initializing CyberMind AI Agent...")
-        
+
         # Initialize core components
         self.ai = AIBrain()
         self.memory = MemorySystem()
@@ -131,8 +137,10 @@ class CyberMindAgent:
         self.scanner = SecurityScanner()
         self.siem = SIEMSetup()
         self.exploit_helper = ExploitHelper()
-        
+
         log("SUCCESS", f"Session ID: {C.CYAN}{self.session_id}{C.END}")
+        if autonomous:
+            log("SUCCESS", f"{C.RED}AUTONOMOUS MODE ENABLED{C.END}")
         log("SUCCESS", "All modules loaded. Ready for commands.")
 
     def run_command_with_healing(self, command, description, retry_count=2):
@@ -190,44 +198,43 @@ class CyberMindAgent:
 
     def pentest_workflow(self, target_ip, target_name="Unknown Target"):
         """
-        Full penetration testing workflow.
-        Phases: Recon → Scan → Enumerate → Exploit Hints → Report
+        Full penetration testing workflow (with autonomous exploitation mode).
+        Phases: Recon → Scan → Enumerate → Exploit → Post-Exploitation → Report
         """
         log("INFO", f"Starting pentest workflow for target: {C.RED}{target_ip}{C.END}")
-        
+
         # Check memory for previous scans of this target
         previous = self.memory.get_target_history(target_ip)
         if previous:
             log("LEARN", f"Found {len(previous)} previous sessions for this target")
-        
+
         report_data = {
             "target": target_ip,
             "target_name": target_name,
             "session_id": self.session_id,
             "start_time": datetime.now().isoformat(),
-            "phases": {}
+            "phases": {},
+            "shells_obtained": []
         }
-        
+
         # ── PHASE 1: RECONNAISSANCE ──────────────────────────────────────────
         print(f"\n{C.BOLD}{C.CYAN}  ═══ PHASE 1: RECONNAISSANCE ═══{C.END}")
-        
-        # AI generates a personalized recon plan
+
         recon_plan = self.ai.generate_pentest_plan("recon", target_ip, previous)
-        
+
         for i, step in enumerate(recon_plan["steps"], 1):
-            choice, cmd = ask_approval(i, step["description"], step["command"], step.get("risk", "LOW"))
-            
+            choice, cmd = ask_approval(i, step["description"], step["command"], step.get("risk", "LOW"), self.autonomous)
+
             if choice == "quit":
                 log("WARN", "User stopped the scan. Generating partial report...")
                 break
             elif choice == "skip":
                 log("INFO", f"Skipped: {step['description']}")
                 continue
-            
+
             success, output = self.run_command_with_healing(cmd, step["description"])
-            
+
             if success:
-                # AI analyzes output and extracts findings
                 findings = self.ai.analyze_output(output, step["description"], target_ip)
                 self.findings.extend(findings.get("findings", []))
                 report_data["phases"].setdefault("recon", []).append({
@@ -236,20 +243,20 @@ class CyberMindAgent:
                     "output_summary": findings.get("summary", output[:500]),
                     "findings": findings.get("findings", [])
                 })
-        
+
         # ── PHASE 2: SCANNING ────────────────────────────────────────────────
         print(f"\n{C.BOLD}{C.CYAN}  ═══ PHASE 2: PORT & SERVICE SCANNING ═══{C.END}")
-        
+
         scan_plan = self.ai.generate_pentest_plan("scan", target_ip, self.findings)
-        
+
         for i, step in enumerate(scan_plan["steps"], 1):
-            choice, cmd = ask_approval(i, step["description"], step["command"], step.get("risk", "LOW"))
-            
+            choice, cmd = ask_approval(i, step["description"], step["command"], step.get("risk", "LOW"), self.autonomous)
+
             if choice == "quit":
                 break
             elif choice == "skip":
                 continue
-            
+
             success, output = self.run_command_with_healing(cmd, step["description"])
             if success:
                 findings = self.ai.analyze_output(output, step["description"], target_ip)
@@ -260,20 +267,20 @@ class CyberMindAgent:
                     "output_summary": findings.get("summary", output[:500]),
                     "findings": findings.get("findings", [])
                 })
-        
+
         # ── PHASE 3: VULNERABILITY ANALYSIS ─────────────────────────────────
         print(f"\n{C.BOLD}{C.CYAN}  ═══ PHASE 3: VULNERABILITY ANALYSIS ═══{C.END}")
-        
+
         vuln_plan = self.ai.generate_pentest_plan("vuln", target_ip, self.findings)
-        
+
         for i, step in enumerate(vuln_plan["steps"], 1):
-            choice, cmd = ask_approval(i, step["description"], step["command"], step.get("risk", step.get("risk", "MEDIUM")))
-            
+            choice, cmd = ask_approval(i, step["description"], step["command"], step.get("risk", "MEDIUM"), self.autonomous)
+
             if choice == "quit":
                 break
             elif choice == "skip":
                 continue
-            
+
             success, output = self.run_command_with_healing(cmd, step["description"])
             if success:
                 findings = self.ai.analyze_output(output, step["description"], target_ip)
@@ -284,36 +291,85 @@ class CyberMindAgent:
                     "output_summary": findings.get("summary", output[:500]),
                     "findings": findings.get("findings", [])
                 })
-        
-        # ── PHASE 4: AI EXPLOITATION SUGGESTIONS ─────────────────────────────
-        print(f"\n{C.BOLD}{C.RED}  ═══ PHASE 4: EXPLOITATION HINTS (AI Guidance) ═══{C.END}")
-        log("WARN", "Exploitation hints are for AUTHORIZED testing only!")
-        
-        if self.findings:
+
+        # ── PHASE 4: AUTONOMOUS EXPLOITATION ─────────────────────────────────
+        if self.autonomous and self.findings:
+            print(f"\n{C.BOLD}{C.RED}  ═══ PHASE 4: AUTONOMOUS EXPLOITATION ═══{C.END}")
+            log("AI", "Analyzing findings and preparing exploits...")
+
             exploit_hints = self.ai.suggest_exploits(self.findings, target_ip)
-            report_data["phases"]["exploit_hints"] = exploit_hints
-            
-            for hint in exploit_hints.get("suggestions", []):
-                print(f"\n  {C.RED}[VULN]{C.END} {hint['vulnerability']}")
-                print(f"  {C.YELLOW}Severity:{C.END} {hint['severity']}")
-                print(f"  {C.YELLOW}Tool:{C.END}     {hint['tool']}")
-                print(f"  {C.YELLOW}Command:{C.END}  {hint['command']}")
-                print(f"  {C.YELLOW}Notes:{C.END}    {hint['notes']}")
-        
+            report_data["phases"]["exploits"] = exploit_hints
+
+            for hint in exploit_hints.get("suggestions", [])[:3]:
+                if hint.get("tool") == "metasploit":
+                    log("WARN", f"Attempting exploit: {hint['vulnerability']}")
+                    module = hint.get("command", "").split()[1] if len(hint.get("command", "").split()) > 1 else None
+
+                    if module:
+                        options = {
+                            "RHOSTS": target_ip,
+                            "LHOST": "0.0.0.0",
+                            "LPORT": "4444"
+                        }
+                        exploit_cmd = self.exploit_helper.auto_exploit_with_shell(target_ip, module, options)
+                        success, output = self.run_command_with_healing(exploit_cmd, f"Exploit: {hint['vulnerability']}")
+
+                        if success:
+                            log("SUCCESS", f"Exploit successful! Shell obtained on {C.GREEN}{target_ip}{C.END}")
+                            self.shells.append({
+                                "target": target_ip,
+                                "vulnerability": hint['vulnerability'],
+                                "status": "active",
+                                "timestamp": datetime.now().isoformat()
+                            })
+                            report_data["shells_obtained"].append({
+                                "vulnerability": hint['vulnerability'],
+                                "timestamp": datetime.now().isoformat()
+                            })
+
+                        if success:
+                            break
+
+            # ── POST-EXPLOITATION ────────────────────────────────────────
+            if self.shells:
+                print(f"\n{C.BOLD}{C.RED}  ═══ PHASE 5: POST-EXPLOITATION ═══{C.END}")
+                log("AI", "Beginning post-exploitation enumeration...")
+
+                post_exploit_cmds = self.exploit_helper.post_exploit_enumeration("meterpreter")
+                for cmd in post_exploit_cmds[:5]:
+                    log("INFO", f"Running: {cmd}")
+
+        else:
+            # ── PHASE 4: EXPLOITATION SUGGESTIONS (MANUAL MODE) ────────────
+            print(f"\n{C.BOLD}{C.RED}  ═══ PHASE 4: EXPLOITATION SUGGESTIONS ═══{C.END}")
+            log("WARN", "Manual exploitation mode - showing guidance")
+
+            if self.findings:
+                exploit_hints = self.ai.suggest_exploits(self.findings, target_ip)
+                report_data["phases"]["exploit_hints"] = exploit_hints
+
+                for hint in exploit_hints.get("suggestions", []):
+                    print(f"\n  {C.RED}[VULN]{C.END} {hint['vulnerability']}")
+                    print(f"  {C.YELLOW}Severity:{C.END} {hint['severity']}")
+                    print(f"  {C.YELLOW}Tool:{C.END}     {hint['tool']}")
+                    print(f"  {C.YELLOW}Command:{C.END}  {hint['command']}")
+                    print(f"  {C.YELLOW}Notes:{C.END}    {hint['notes']}")
+
         # ── FINALIZE ─────────────────────────────────────────────────────────
         report_data["end_time"] = datetime.now().isoformat()
         report_data["total_findings"] = len(self.findings)
+        report_data["shells_count"] = len(self.shells)
         report_data["session_log"] = self.session_log
-        
+
         # Save to memory for future learning
         self.memory.save_session(self.session_id, target_ip, report_data, self.findings)
         log("LEARN", "Session saved to memory database")
-        
+
         # Generate PDF report
         print(f"\n{C.BOLD}{C.CYAN}  ═══ GENERATING PDF REPORT ═══{C.END}")
         pdf_path = self.reporter.generate_pentest_report(report_data, self.findings)
         log("SUCCESS", f"PDF Report saved: {C.GREEN}{pdf_path}{C.END}")
-        
+
         return report_data
 
     def siem_setup_workflow(self):
@@ -478,19 +534,20 @@ class CyberMindAgent:
 # ═══════════════════════════════════════════════════════════════════════════════
 def main():
     parser = argparse.ArgumentParser(
-        description="CyberMind AI - Personal Cybersecurity Assistant"
+        description="CyberMind AI - Autonomous Cybersecurity Assistant for CTF/HackTheBox"
     )
     parser.add_argument("--task", type=str, help="Single task to execute (non-interactive)")
     parser.add_argument("--target", type=str, help="Target IP for pentest")
+    parser.add_argument("--autonomous", action="store_true", help="Enable autonomous exploitation mode (no user prompts)")
     parser.add_argument("--siem-setup", action="store_true", help="Start SIEM setup workflow")
     parser.add_argument("--report-only", type=str, help="Generate report for session ID")
     parser.add_argument("--no-banner", action="store_true", help="Skip the banner")
-    
+
     args = parser.parse_args()
-    
+
     if not args.no_banner:
         banner()
-    
+
     # Check for API key
     if not os.getenv("GROQ_API_KEY"):
         print(f"\n  {C.RED}[ERROR] GROQ_API_KEY not set!{C.END}")
@@ -498,9 +555,9 @@ def main():
         print(f"  {C.YELLOW}2. Copy .env.example to .env{C.END}")
         print(f"  {C.YELLOW}3. Add your key: GROQ_API_KEY=gsk_xxxxxxxxx{C.END}\n")
         sys.exit(1)
-    
-    agent = CyberMindAgent()
-    
+
+    agent = CyberMindAgent(autonomous=args.autonomous)
+
     if args.siem_setup:
         agent.siem_setup_workflow()
     elif args.target:

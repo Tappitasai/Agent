@@ -1,0 +1,81 @@
+# CyberMind AI v2.0 - Autonomous Penetration Testing Agent
+
+**For CTF/HackTheBox environments**
+
+## What's New (v2.0)
+
+✨ **Fully Autonomous Exploitation** - No user prompts needed
+🔗 **Automatic Shell Retrieval** - Meterpreter, reverse shells, bind shells
+📈 **Post-Exploitation Automation** - Privilege escalation, credential dumping
+🧠 **AI-Powered Decision Making** - Uses Groq's Llama 3.3 70B model
+📊 **Professional Reporting** - Auto-generated PDF reports with findings
+
+## Quick Start
+
+```bash
+# Clone and setup
+git clone <repo>
+cd cybermind-ai
+bash quickstart.sh
+
+# Run autonomous pentest
+python3 agent.py --target 10.10.10.40 --autonomous
+
+# Results
+# - Automatic reconnaissance
+# - Automatic vulnerability scanning
+# - Automatic exploit selection and execution
+# - Automatic shell retrieval
+# - Automatic post-exploitation
+# - PDF report with findings
+```
+
+## Features
+
+- Fully autonomous - zero user interaction
+- Intelligent vulnerability-to-exploit mapping
+- Meterpreter session management
+- Post-exploitation automation
+- Learning system (remembers past findings)
+- Professional PDF reports
+- Memory database of past scans
+- Support for multiple target types
+- Automatic privilege escalation
+
+## Documentation
+
+- **README.md** - Full feature documentation
+- **USAGE.md** - Quick command reference
+- **AUTONOMOUS_MODE.md** - Detailed autonomous workflow
+- **DEPLOYMENT.md** - Technical deployment guide
+
+## For CTF/HackTheBox
+
+Perfect for:
+- Automated machine enumeration
+- Rapid exploitation
+- Speed runs
+- Learning attack paths
+- Batch scanning
+
+## Requirements
+
+- Kali Linux / ParrotOS / Ubuntu
+- Python 3.8+
+- Metasploit Framework
+- Nmap, Nikto, SQLmap, Hydra
+- Free Groq API key (https://console.groq.com)
+
+## Architecture
+
+```
+Reconnaissance → Scanning → Vulnerability Analysis → 
+Autonomous Exploitation → Shell Retrieval → 
+Post-Exploitation → Report Generation
+```
+
+All phases run automatically without user interaction.
+
+## License
+
+MIT - Educational and authorized security testing only
