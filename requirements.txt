@@ -1,0 +1,23 @@
+# CyberMind AI - Python Dependencies
+# Install with: pip install -r requirements.txt --break-system-packages
+
+# AI Backend - Groq (Free, Ultra-Fast)
+groq>=0.11.0
+
+# PDF Report Generation
+reportlab>=4.0.0
+
+# Environment variable loading
+python-dotenv>=1.0.0
+
+# HTTP requests (for API calls)
+requests>=2.31.0
+
+# JSON handling (built-in, but listing for clarity)
+# json - built-in
+
+# Optional: Better terminal colors
+colorama>=0.4.6
+
+# Optional: Progress bars for long scans
+tqdm>=4.65.0

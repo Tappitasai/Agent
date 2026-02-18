@@ -1,0 +1,29 @@
+# CyberMind AI - gitignore
+# NEVER commit these files (contain sensitive data)
+
+# API keys and secrets
+.env
+*.key
+*.pem
+
+# Reports (may contain vulnerability data)
+reports/
+memory_db/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.Python
+env/
+venv/
+*.egg-info/
+
+# Temporary scan output
+/tmp/msf_script.rc
+*.xml
+*.nmap
+
+# OS files
+.DS_Store
+Thumbs.db
